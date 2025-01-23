@@ -1,12 +1,13 @@
 const express = require('express');
-const { client, call, register, visita, calendary, user } = require('../db/db');
+const { client, call, register, cotizacion, visita, calendary, user } = require('../db/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { default: axios } = require('axios');
 const dayjs = require('dayjs');
-const { cancelar } = require('./services/calendaryServices');
+const { cancelar, aplazado, cumplido } = require('./services/calendaryServices');
 const { addNoteServices } = require('./services/notesServices');
 const { searchUserServices } = require('./services/userService');
+const { Op } = require('sequelize');
 
 // CONTROLADORES DEL CLIENTE - VISITAS
 
@@ -32,15 +33,22 @@ const getVisitas = async (req, res) => {
             // Caso contrario, avanzamos...
             const searchVisita = await visita.findAll({
                 where: {
-                    state: 'active'
+                    state: {
+                        [Op.or]: ['active', 'aplazado', 'cancelada']
+                    }
                 },
-                include:[{model: user},{
-                    model: client
+                include:[{
+                    model: client,
+                    include:[{
+                        model: register,
+                        include:[{
+                            model: user
+                        }]
+                    }]
                 }, {
                     model: calendary
-                }, {
-                    model: register
-                }]
+                }],
+                order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
             }).catch(err => {
                 console.log(err);
                 return null;
@@ -55,16 +63,24 @@ const getVisitas = async (req, res) => {
              // Caso contrario, avanzamos...
              const searchVisita = await visita.findAll({
                 where: {
-                    state: 'active',
+                    state: {
+                        [Op.or]: ['active', 'aplazado', 'cancelada']
+                    },
                     userId: searchUser.id
                 },
                 include:[{
-                    model: client
+                    model: client,
+                    include:[{
+                        model: register,
+                        include:[{
+                            model: user
+                        }]
+                    }]
                 }, {
                     model: calendary
-                }, {
-                    model: register
-                }]
+                }],
+                order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
+
             }).catch(err => {
                 console.log(err);
                 return null;
@@ -85,15 +101,35 @@ const getVisitas = async (req, res) => {
 const getVisita = async (req, res) => {
     try{
         // Recibo parametros por params
-        const { callId } = req.params;
+        const { visitaId } = req.params;
         // Validamos
-        if(!callId) return res.status(501).json({msg: 'Parametro invalido.'});
+        if(!visitaId) return res.status(501).json({msg: 'Parametro invalido.'});
         // Consultamos todo.
-        const searchCall = await call.findOne({
+        const searchCall = await visita.findOne({
             where: {
-                id: callId,
-                state: 'active'
-            }
+                id: visitaId,
+                state: {
+                    [Op.or]: ['active', 'aplazado']
+                }
+            },
+            include:[{
+                model: client,
+                include: [{
+                    model: register,
+                    include:[{
+                        model: user
+                    }]
+                }]
+            }, { 
+                model: calendary,
+                where: {
+                    state: 'active'
+                }
+            }],
+
+            
+            order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
+
         }).catch(err => {
             console.log(err);
             return null;
@@ -113,7 +149,7 @@ const getVisita = async (req, res) => {
 const createVisita = async (req, res) => {
     try{
         // Recibo toda la informacion por body
-        const { title, clientId, userId, time, hour } = req.body; 
+        const { title, clientId, userId, time, hour, contactId } = req.body; 
         // Validamos que entren los datos necesarios
         if(!title || !clientId || !userId || !hour) res.status(501).json({msg: 'Parametros no validos.'});
 
@@ -122,6 +158,7 @@ const createVisita = async (req, res) => {
             title,
             clientId,
             userId,
+            contactId: parseInt(contactId),
             state: 'active' 
         })
         .then(async (result) => {
@@ -129,7 +166,8 @@ const createVisita = async (req, res) => {
             let body = {
                 userId,
                 clientId,
-                callId: result.id,
+                callId: null,
+                visitaId: result.id,
                 type: 'visita',
                 caso: null,
                 contacto: null,
@@ -217,121 +255,188 @@ const cancelVisita = async (req, res) => {
 }
 
 
-// No contesto
-// const DontCall = async (req, res) => {
-//     try{
-//         // Recibo toda la informacion por body
-//         const {callId, title, userId, clientId, caso,  time, hour } = req.body; 
-//         // Validamos que entren los datos necesarios
+// Aplazar
+const aplazarVisita = async(req, res) => {
+    try{
+        // Recibimos los datos por body
+        const { title, note, tags, visitaId, userId, clientId, calendaryId, time, hour } = req.body;
+        // Validamos
+        if(!title || !clientId || !userId || !calendaryId || !time || !hour) res.status(501).json({msg: 'Parametros no validos.'});
+        // Caso contrario, avanzamos
+        // Actualizamos el estado.
+        const updateCall = await visita.update({
+            state: 'aplazado',
+        }, {
+            where: {
+                id: visitaId
+            }
+        })
+        .then(async(result) => {
+            const aplazar = await aplazado(calendaryId)
+            return result
+        })
+        .then(async(data) => {
+            let body = {
+                userId,
+                clientId,
+                visitaId,
+                type: 'visita',
+                note,
+                tags,
+                time,
+                hour, 
+                state: 'active'
+            }
+            const toCalendar = await axios.post('/api/calendario/new/', body)
+            .then((result) => result.data)
+            .then((data) => {
+                console.log('cumple la funcion')
+                return data
+            })
+            .catch(err => {
+                console.log(err);
+                console.log('No hemos logrado conectar la funcion')
+                return null;
+            })
+            return data
+        })
+        .catch(err => {
+            console.log(err);
+            return null
+        })
 
-//         const fecha = dayjs(time) // Esta fecha es la que tiene el calendario activo.
-//         // Agregamos 3 dias
-//         const newFecha = fecha.add(3, 'day');
-//         if(!callId || !time || !hour ) res.status(501).json({msg: 'Parametros no validos.'});
-//         if(caso == "contacto 2" || caso == "contacto 3"){
-            
-//             // caso contrario, creamos el cliente.
-//             const updateClient = await call.update({
-//                 title,
-//                 case: caso, // Contacto 1, contacto 2
-//                 // , contacto 3.
-//             }, {
-//                 where: {
-//                     id: callId
-//                 }
-//             })
-//             .then(async (upd) => {
-//                 const updateCalendary = await calendary.update({
-//                     state: 'aplazado',
-//                 }, {
-//                     where: {
-//                         callId
-//                     }
-//                 }).catch(err => {
-//                     console.log('err')
-//                     return null;
-//                 })
+        if(!updateCall) return res.status(502).json({msg: 'No hemos logrado actualizar esto.'});
+        // Caso contrario, avanzamos
+        res.status(200).json({msg:'Actualizado con exito'});
+    }catch(err){
+        console.log(err);
+        res.status(500).json({msg: 'Ha ocurrido un error en la principal'});
+    }
+}
 
-//                 return 1
-//             })
-//             .then(async(res) => {
-//                 // CREAMOS EL BODY PARA AGREGAR EVENTO AL CALENDARIO
-//                 let body = {
-//                     userId,
-//                     clientId,
-//                     callId,
-//                     type: 'contacto',
-//                     caso: caso,
-//                     contacto: caso,
-//                     note: title,
-//                     time: newFecha,
-//                     hour
-//                 }
-//                 const toCalendar = await axios.post('/api/calendario/new/', body)
-//                 .then((res) => res.data)
-//                 .then((data) => {
-//                     console.log('cumple la funcion')
-//                     return data
-//                 })
-//                 .catch(err => {
-//                     console.log(err);
-//                     console.log('No hemos logrado conectar la funcion')
-//                     return null;
-//                 })
+// No tuvo interes
+const SinInteresVisita = async (req, res) => {
+    try{
+        // Recibo toda la informacion por body
+        const {visitaId, userId, clientId, nota, tags, calendaryId } = req.body; 
+        // Validamos datos del servidor
 
-//                 return res
-//             })
-//             .catch(err => {
-//                 console.log(err);
-//                 return null;
-//             });
+        if(!visitaId || !clientId || !calendaryId) return res.status(501).json({msg: 'Parametros no son validos.'});
 
-//             if(!updateClient) return res.status(502).json({msg: 'No hemos logrado crear esto.'});
-//             // Caso contrario, enviamos respuesta.
-//             return res.status(201).json({msg: 'Aplazado con exito.'});
-//         }else{
-//             const lostCall = await call.update({
-//                 state: 'perdido'
-//             }, {
-//                 where: {
-//                     id: callId
-//                 }
-//             })
-//             .then( async (res) => {
-//                 const cancelCalendary = await calendary.update({
-//                     state: 'cancelado'
-//                 },{
-//                     where: {
-//                         callId,
-//                         state: 'active'
-//                     }
-//                 }).catch(err => {
-//                     console.log(err);
-//                     return null
-//                 });
+        // Caso contrario
+        const visitaLost = await visita.update({
+            state: 'perdido', 
+        }, {
+            where: {
+                id: visitaId
+            }
+        })
+        .then(async (result) => {
+            // type, contacto, prospecto, tags, note, extra, manual, userId, clientId, callId, visitaId, prospectId, calendaryId,
+            const updateCalendario = await cumplido(calendaryId, 'perdido')
+            .then(async () => {
+                const newNote = await addNoteServices('visita', null, null, tags, nota, 'perdido', 'automatico', userId, clientId, null, visitaId, null, calendaryId) 
+                return newNote;
+            }).catch(err => {
+                console.log(err);
+                return false
+            })
+            return result;
 
-//                 return res 
-//             })
-//             .catch(err => {
-//                 console.log(err);
-//                 return null;
-//             });
+        }).catch(err => {
+            console.log(err);
+            return null;
+        });
 
-//             if(!lostCall) return res.status(502).json({msg:'No logramos actualizar esto.'});
-            
-//             // Caso contrario, avanzamos
-//             return res.status(200).json({msg: 'Enviado a perdidos.'});
-//         }
+        if(!visitaLost) return res.status(502).json({msg:'No hemos logrado actualizar esto.'});
 
-//     }catch(err ){
-//         console.log(err);
-//         res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
-//     }
-// }
+        // caso contrario
+        res.status(200).json({msg: 'Actualizado con exito.'});
+    }catch(err ){
+        console.log(err);
+        res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
+    }
+}
 
+// AGENDAR COTIZACIÓN
+const agendaCotizacion = async (req, res) => {
+    try{
+        const { visitaId, clientId, userId, calendaryId,
+            name, nit, nro, fecha, bruto, iva, descuento, neto, state
+        } = req.body;
+    
+        if(!visitaId || !clientId || !userId || !calendaryId ) return res.status(501).json({msg: 'Los parametros no son validos.'});
+
+        // Caso contrario, avanzamos
+        const callOk = await visita.update({
+            state: 'cumplida',
+        }, {
+            where: {
+                id:visitaId
+            }
+        })
+        .then(async (result) => {
+            const cumplida = await cumplido(calendaryId, null)
+            return result;
+        })
+        .then(async (data) => {
+            let body = {
+                name,
+                nit,
+                nro,
+                fecha,
+                fechaAprobada: null,
+                bruto,
+                descuento,
+                iva,
+                neto,
+                clientId,
+                userId,
+                state
+            }
+            const toCalendar = await axios.post('/api/cotizacion/addDesarrollo', body)
+            .then((result) => result.data)
+            .then((data) => {
+                console.log('cumple la funcion')
+                return data
+            })
+            .catch(err => {
+                console.log(err);
+                console.log('No hemos logrado conectar la funcion')
+                return null;
+            });
+
+            return toCalendar
+        })
+        .catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if(!callOk) return res.status(502).json({msg:'No hemos logrado actualizar esto.'});
+
+        const searchInfo = await cotizacion.findByPk(callOk.id,{
+            include: [{
+                model:client
+            }, {model: calendary}, {model:user}]
+        }).catch(err => {
+            console.log(err);
+            return null;
+        })
+        // Caso contrario, avanzamos...
+        res.status(200).json(searchInfo);
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
+    }
+}
 
 module.exports = {
     getVisitas,
     createVisita,
-    cancelVisita  
+    cancelVisita,
+    aplazarVisita,
+    SinInteresVisita,
+    getVisita,
+    agendaCotizacion // Agendar cotización
 } 

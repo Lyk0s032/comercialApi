@@ -2,6 +2,8 @@ const { Sequelize, Op} = require('sequelize');
 
 // Importe.
 const modelUser = require('./model/user'); // User
+// MODELO DE METAS
+const modelMetas = require('./model/metas');
 
 const modelTags = require('./model/tags');
 const modelProspecto = require('./model/prospecto');
@@ -35,6 +37,7 @@ const sequelize = new Sequelize(dburl, {
     
 // Modelos
 modelUser(sequelize);
+modelMetas(sequelize);
 modelTags(sequelize);
 modelFuente(sequelize);
 modelProspecto(sequelize);
@@ -46,8 +49,17 @@ modelCalendary(sequelize);
 modelNotes(sequelize);
 modelCotizacion(sequelize)            // Cotizacion
 
+const { user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, meta } = sequelize.models;
 
-const { user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion } = sequelize.models;
+
+// USUARIO Y METAS
+// Relación uno a muchos
+user.hasMany(meta, {
+  foreignKey: 'userId', // Clave foránea en la tabla contact
+  onDelete: 'CASCADE',    // Opcional: elimina los posts si se elimina el usuario
+});
+
+meta.belongsTo(user);
 
 // FUENTES Y PROSPECTOS
 
@@ -70,6 +82,14 @@ client.hasMany(contact, {
 contact.belongsTo(client);
 
 
+
+contact.hasMany(call, {
+  foreignKey: 'contactId'
+})
+call.belongsTo(contact)
+
+contact.hasMany(visita);
+visita.belongsTo(contact)
 // Relacionamos el cliente con los contactos de comunicacion.
 // Relación uno a muchos
 user.hasMany(contact, {

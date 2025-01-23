@@ -1,11 +1,13 @@
 const express = require('express');
-const { tag, fuente, prospecto, client, calendary } = require('../db/db');
+const { tag, fuente, prospecto, register, client, calendary } = require('../db/db');
+const { Op } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { newProspecto, addTag, newFuente, removeTag, updateFuente, getAllTags, getFuentes } = require('./services/prospectoService');
 const dayjs = require('dayjs');
 const { default: axios } = require('axios');
 const { aplazado } = require('./services/calendaryServices');
+const { addNoteServices } = require('./services/notesServices');
 
 
 // Obtener todos los tags y fuentes
@@ -182,7 +184,18 @@ const newProspect = async (req, res) => {
 const getAllProspectos = async (req, res) => {
     try{
         // Buscamos todos los prospectos
-        const searchProspectos = await prospecto.findAll()
+        const searchProspectos = await prospecto.findAll({
+            where: {
+                state: {
+                    [Op.in]: ['intento 1', 'intento 2', 'intento 3'] // Filtra por los tres valores
+              }
+            },
+            include:[{
+                model: calendary
+            }, {
+                model: register
+            }]
+        })
         .catch(err => {
             console.log(err);
             return null;
@@ -299,7 +312,7 @@ const aplazarProspecto = async(req, res) => {
         // Recibimos los datos por body
         const { title, note, tags, userId, prospectoId, calendaryId, time, hour } = req.body;
         // Validamos
-        if(!title || !prospectoId || !userId || !calendaryId || !time || !hour) return res.status(501).json({msg: 'Parametros no validos.'});
+        if(!prospectoId || !userId || !calendaryId || !time || !hour) return res.status(501).json({msg: 'Parametros no validos.'});
         // Caso contrario, avanzamos
         // Actualizamos el estado.
         const updateCall = await prospecto.update({
@@ -355,6 +368,111 @@ const aplazarProspecto = async(req, res) => {
         res.status(500).json({msg: 'Ha ocurrido un error en la principal'});
     }
 }
+
+// Convertir a cliente
+const convertirToClient = async(req, res) => {
+    try{
+        // Recibimos datos por parámetro
+        const { photo, prospectoId, 
+            nombreEmpresa, nit, phone, email, type, sector, responsable, url, direccion, fijo, ciudad
+        } = req.body;
+        // Validamos que los parametros entren
+        if(!prospectoId || !responsable || !phone || !type) return res.status(501).json({msg: 'Parametros invalidos.'})
+            
+            let defaultPerson = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_640.png';
+            let defaultDistribuidor = 'https://professorm.org/wp-content/uploads/google-my-business-logo-500.png';
+            let businessDefault = 'https://cdn-icons-png.flaticon.com/512/10839/10839543.png';
+
+            let wallpaper = photo ? photo : type == 'persona' ? defaultPerson : type == 'distribuidor' ? defaultDistribuidor : businessDefault
+
+        // Caso contrario, avanzamos...
+        const createClient = await client.create({
+            photo: wallpaper,
+            nombreEmpresa,
+            nit,
+            phone,
+            email,
+            type, // Distribuidor o cliente varios
+            sector,
+            responsable,
+            url,
+            direccion,
+            fijo,
+            ciudad,
+            state: 'active'
+        })
+        .then( async (res) => {
+            console.log('Creado.')
+
+            const updateProspecto = await prospecto.update({
+                state: 'cliente'
+            }, {
+                where: {
+                    id: prospectoId
+                }
+            })
+            .then((res) => {
+                console.log('Actualizado')
+            })
+
+            return res
+        })
+        .catch((err) => {
+            console.log(err);
+            console.log('Error en la creción')
+        });
+
+        if(!createClient) return res.status(502).json({msg: 'No hemos podido crear esto.'});
+
+        // Caso contrario, enviamos respuesta
+        res.status(201).json(createClient);
+
+    }catch(err){
+        console.log(err);
+        return 500
+    }
+}
+
+// No tuvo interes
+const NoInteresProspecto = async (req, res) => {
+    try{
+        // Recibo toda la informacion por body
+        const {prospectoId, userId, contacto, nota, tags } = req.body; 
+        // Validamos datos del servidor
+
+        if(!prospectoId  ) return res.status(501).json({msg: 'Parametros no son validos.'});
+
+        // Caso contrario
+        const CallLost = await prospecto.update({
+            state: 'perdido', 
+        }, {
+            where: {
+                id: prospectoId,
+            }
+        })
+        .then(async (result) => {
+            const newNote = await addNoteServices('prospecto', null, prospectoId, tags, nota, 'perdido', 'automatico', userId, null, null, null, null, null) 
+            return newNote;
+        }).catch(err => {
+            console.log(err);
+            return false
+        })
+
+        if(!CallLost) return res.status(502).json({msg:'No hemos logrado actualizar esto.'});
+
+        // caso contrario
+        res.status(200).json({msg: 'Actualizado con exito.'});
+    }catch(err ){
+        console.log(err);
+        res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
+    }
+}
+// Crear función para pasar de prospecto a cliente
+// Después, agendar visita o llamada.
+// Después, no tiene interés.
+//
+// Hacer panel de llamadas, visitas y cotizaciones.
+//
 module.exports = {
     getAllTagsAndFuentes, // Funcion para obtener tags y fuentes
     newTag,
@@ -363,7 +481,9 @@ module.exports = {
     deleteFuente,
     newProspect,
     getAllProspectos,
-    // EMBUDO
+    // EMBUDO   -   
     DontCallProspecto, // NO CONTESTO
-    aplazarProspecto // APLAZO
+    aplazarProspecto, // APLAZO
+    convertirToClient, // Convertir a cliente.
+    NoInteresProspecto,
 }

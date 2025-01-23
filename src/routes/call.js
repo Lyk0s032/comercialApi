@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 // CLIENTES
-const { getCall, createCall, DontCall, SinInteresLlamada, aplazarCall, agendaVisita, getCalls } = require('../controllers/callControllers');
+const { getCall, createCall, DontCall, SinInteresLlamada, aplazarCall, agendaVisita, getCalls, agendaCotizacion } = require('../controllers/callControllers');
 
 
 router.route('/get/:userId') // Obtener llamada por usuario.
     .get(getCalls)
 
-router.route('/get/:callId') // Obtener llamada especifica.
+router.route('/getCall/:callId') // Obtener llamada especifica.
     .get(getCall)
 
 router.route('/create')
@@ -26,5 +26,6 @@ router.route('/aplazar')
 router.route('/agendaVisita')
     .post(agendaVisita)
 
-
+router.route('/agendaCotizacion')
+    .post(agendaCotizacion)
 module.exports = router;

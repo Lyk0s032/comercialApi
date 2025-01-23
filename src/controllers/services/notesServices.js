@@ -1,7 +1,7 @@
 const { cliente, register, calendary } = require('./../../db/db');
 
 // Funcion para agregar nota.
-const addNoteServices = async (type, contacto, prospecto, tags, note, extra, manual, userId, clientId, callId, visitaId, prospectoId, calendaryId) => {
+const addNoteServices = async (type, contacto, prospecto, tags, note, extra, manual, userId, clientId, callId, visitaId, prospectoId, calendaryId, cotizacionId) => {
     try{
         // Validamos los datos necesarios.
         const msg = "Parametros invalidos";
@@ -21,7 +21,8 @@ const addNoteServices = async (type, contacto, prospecto, tags, note, extra, man
             userId,
             calendaryId,
             visitumId: visitaId,
-            prospectoId
+            prospectoId,
+            cotizacionId: cotizacionId ? cotizacionId : null
         }).catch(err =>{
             console.log(err);
             return null;

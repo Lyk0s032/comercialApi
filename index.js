@@ -9,10 +9,11 @@ app.use(express.json());
 
 const routes = require('./src/routes');
 const { default: axios } = require('axios');
+const isAuthenticated = require('./src/controllers/authentication');
 
 const PORT = process.env.PORT || 3000;
 
-axios.defaults.baseURL = 'http://192.168.1.9:3000/';
+axios.defaults.baseURL = 'http://192.168.1.160:3000/';
 
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodyParser.json({ limit: '50mb' }));
@@ -30,13 +31,23 @@ app.get('/', (req, res)  => {
     res.send('Running Server to CRM comercial - Costa Center');
 })
 
+app.get('/sign/user/', isAuthenticated, (req, res) => {
+  try {
+    console.log(req.user);
+    console.log('entra')
+    res.status(200).json({user: req.user});
+  }catch(err){
+    console.log(err);
+    res.status(500).json({msg: 'error en la principal'});
+  }
+})
 
 app.use('/api', routes)
 
 
 
 const server = app.listen(PORT, () => {
-    db.sync({force: false});
+    db.sync({force: false}); 
     console.log(`Server running on port ${PORT}`);
 });
-  
+   

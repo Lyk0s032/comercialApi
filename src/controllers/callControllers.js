@@ -1,5 +1,5 @@
 const express = require('express');
-const { client, call, register, calendary, user } = require('../db/db');
+const { client, call, register, calendary, user, cotizacion } = require('../db/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { default: axios } = require('axios');
@@ -8,6 +8,7 @@ const { cumplido, aplazado } = require('./services/calendaryServices');
 const { addNoteServices } = require('./services/notesServices');
 const { createVisitaServices } = require('./services/visitasServices');
 const { searchUserServices } = require('./services/userService');
+const { Op } = require('sequelize');
 
 // CONTROLADORES DEL CLIENTE - LLAMADAS
 
@@ -25,7 +26,7 @@ const getCalls = async (req, res) => {
             console.log(err);
             return null;
         });
-
+        console.log(searchUser)
         if(!searchUser) return res.status(404).json({msg: 'No hemos encontrado este usuario.'});
         
         // SI ES EL LIDER ME TRAE TODO.
@@ -33,21 +34,27 @@ const getCalls = async (req, res) => {
             // Caso contrario, avanzamos...
             const searchCall = await call.findAll({
                 where: {
-                    state: 'active'
-                },
+                    state: {
+                        [Op.or]: ['active', 'aplazado', 'perdido']
+                    }
+                }, 
                 include:[{
-                    model: client
+                    model: client,
+                    include: [{
+                        model: register,
+                        include:[{
+                            model: user
+                        }]
+                    }]
                 }, {
                     model: calendary
-                }, {
-                    model: register
-                }]
+                }],
             }).catch(err => {
                 console.log(err);
                 return null;
             });
             // Validamos
-            if(!searchCall) return res.status(404).json({msg: 'No hay resultado.'});
+            if(!searchCall || !searchCall.length) return res.status(404).json({msg: 'No hay resultado.'});
             // Caso contrario, envio respuesta
             res.status(200).json(searchCall);
 
@@ -56,22 +63,30 @@ const getCalls = async (req, res) => {
              // Caso contrario, avanzamos...
              const searchCall = await call.findAll({
                 where: {
-                    state: 'active',
-                    userId: searchUser.id
-                },
+                    userId: searchUser.id,
+                    state: {
+                        [Op.or]: ['active', 'aplazado', 'perdido']
+                    }
+                }, 
                 include:[{
-                    model: client
+                    model: client,
+                    include: [{
+                        model: register,
+                        include:[{
+                            model: user
+                        }]
+                    }]
                 }, {
                     model: calendary
-                }, {
-                    model: register
-                }]
+                }],
+                order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
+
             }).catch(err => {
                 console.log(err);
                 return null;
             });
             // Validamos
-            if(!searchCall) return res.status(404).json({msg: 'No hay resultado.'});
+            if(!searchCall || !searchCall.length) return res.status(404).json({msg: 'No hay resultado.'});
             // Caso contrario, envio respuesta
             res.status(200).json(searchCall);
         }
@@ -95,7 +110,25 @@ const getCall = async (req, res) => {
             where: {
                 id: callId,
                 state: 'active'
-            }
+            },
+            include:[{
+                model: client,
+                include: [{
+                    model: register,
+                    include:[{
+                        model: user
+                    }]
+                }]
+            }, { 
+                model: calendary,
+                where: {
+                    state: 'active'
+                }
+            }],
+
+            
+            order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
+
         }).catch(err => {
             console.log(err);
             return null;
@@ -110,20 +143,22 @@ const getCall = async (req, res) => {
         res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
     }
 }
-// CREAR CALL
+
+// CREAR CALL - 
 const createCall = async (req, res) => {
     try{
         // Recibo toda la informacion por body
-        const { title, caso, clientId, userId, time, hour } = req.body; 
+        const { title, caso, clientId, userId, time, hour, contactId} = req.body; 
         // Validamos que entren los datos necesarios
-        if(!title || !caso || !clientId || !userId) res.status(501).json({msg: 'Parametros no validos.'});
+        if(!title || !caso || !clientId || !userId || !contactId) return  res.status(501).json({msg: 'Parametros no validos.'});
 
         // caso contrario, creamos el cliente.
         const createCliente = await call.create({
             title,
-            case: caso, // Contacto 1, contacto, contacto 3.
+            case: caso, // Contacto 1, contacto 2, contacto 3.
             clientId,
             userId,
+            contactId: contactId,
             state: 'active' 
         })
         .then(async (result) => {
@@ -207,6 +242,78 @@ const agendaVisita = async (req, res) => {
     }
 }
 
+// AGENDAR COTIZACIÓN
+const agendaCotizacion = async (req, res) => {
+    try{
+        const { callId, clientId, userId, calendaryId,
+            name, nit, nro, fecha, bruto, iva, descuento, neto, state
+        } = req.body;
+    
+        if(!callId || !clientId || !userId || !calendaryId ) return res.status(501).json({msg: 'Los parametros no son validos.'});
+
+        // Caso contrario, avanzamos
+        const callOk = await call.update({
+            state: 'cumplida',
+        }, {
+            where: {
+                id:callId
+            }
+        })
+        .then(async (result) => {
+            const cumplida = await cumplido(calendaryId, null)
+            return result;
+        })
+        .then(async (data) => {
+            let body = {
+                name,
+                nit,
+                nro,
+                fecha,
+                fechaAprobada: null,
+                bruto,
+                descuento,
+                iva,
+                neto,
+                clientId,
+                userId,
+                state
+            }
+            const toCalendar = await axios.post('/api/cotizacion/addDesarrollo', body)
+            .then((result) => result.data)
+            .then((data) => {
+                console.log('cumple la funcion')
+                return data
+            })
+            .catch(err => {
+                console.log(err);
+                console.log('No hemos logrado conectar la funcion')
+                return null;
+            });
+
+            return toCalendar
+        })
+        .catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if(!callOk) return res.status(502).json({msg:'No hemos logrado actualizar esto.'});
+
+        const searchInfo = await cotizacion.findByPk(callOk.id,{
+            include: [{
+                model:client
+            }, {model: calendary}, {model:user}]
+        }).catch(err => {
+            console.log(err);
+            return null;
+        })
+        // Caso contrario, avanzamos...
+        res.status(200).json(searchInfo);
+    }catch(err){
+        console.log(err);
+        return res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
+    }
+}
 // No contesto
 const DontCall = async (req, res) => {
     try{
@@ -217,7 +324,7 @@ const DontCall = async (req, res) => {
         const fecha = dayjs(time) // Esta fecha es la que tiene el calendario activo.
         // Agregamos 3 dias
         const newFecha = fecha.add(3, 'day');
-        if(!callId || !time || !hour ) res.status(501).json({msg: 'Parametros no validos.'});
+        if(!callId || !time || !hour ) return res.status(501).json({msg: 'Parametros no validos.'});
         if(caso == "contacto 2" || caso == "contacto 3"){
             
             // caso contrario, creamos el cliente.
@@ -336,7 +443,7 @@ const aplazarCall = async(req, res) => {
             }
         })
         .then(async(result) => {
-            const aplazado = await aplazado(calendaryId)
+            const aplazar = await aplazado(calendaryId)
             return result
         })
         .then(async(data) => {
@@ -430,5 +537,6 @@ module.exports = {
     DontCall,
     SinInteresLlamada,
     aplazarCall,
-    agendaVisita
+    agendaVisita,
+    agendaCotizacion
 } 

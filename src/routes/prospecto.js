@@ -1,8 +1,11 @@
 const express = require('express');
 const { addNote } = require('../controllers/noteControllers');
-const { newProspect, newTag, nuevaFuente, deleteTags, deleteFuente, getAllTagsAndFuentes, getAllProspectos, DontCallProspecto, aplazarProspecto } = require('../controllers/prospectoController');
-const router = express.Router();
-
+const { newProspect, newTag, nuevaFuente, deleteTags, 
+    deleteFuente, getAllTagsAndFuentes, getAllProspectos, DontCallProspecto, 
+    aplazarProspecto, convertirToClient, 
+    NoInteresProspecto} = require('../controllers/prospectoController');
+const router = express.Router(); 
+ 
 // CLIENTES
 
 router.route('/getAll', getAllProspectos)
@@ -18,6 +21,13 @@ router.route('/dontCall')
 
 router.route('/aplazar')
     .put(aplazarProspecto)
+
+router.route('/sinInteres')
+    .put(NoInteresProspecto)
+
+    
+router.route('/createClient')
+    .post(convertirToClient)
 
 
 router.route('/addTag')

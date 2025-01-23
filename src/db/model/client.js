@@ -2,6 +2,9 @@ const { DataTypes } = require('sequelize');
 
 module.exports = sequelize => {
     sequelize.define('client', { 
+        photo: {
+            type: DataTypes.TEXT
+        },
         // Estado... Activo o innactivo
         nombreEmpresa: {
             type: DataTypes.STRING

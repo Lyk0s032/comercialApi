@@ -8,7 +8,7 @@ const searchUserServices = async (id) => {
         // Validamos que el parametro entre correctamente
         if(!id) return 501
         // Caso contrario, avanzamos
-        const searchById = user.findByPk(id).catch(err => {
+        const searchById = await user.findByPk(id).catch(err => {
             console.log(err);
             return null
         });

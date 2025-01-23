@@ -2,11 +2,11 @@ const dayjs = require('dayjs');
 const { cliente, register, calendary, cotizacion } = require('./../../db/db');
 
 // Funcion para agregar Cotizacion.
-const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId) => {
+const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, state) => {
     try{
         // Validamos los datos necesarios.
         const msg = "Parametros invalidos";
-        if(!name || !nit || !userId || !nro || !fecha || !bruto || !descuento || !neto || !clientId) return JSON.parse(msg);
+        if(!name ||  !clientId) return JSON.parse(msg);
         // Caso contrario, avanzamos...
         
         const addCotizacion = await cotizacion.create({
@@ -21,7 +21,7 @@ const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto,
             neto,
             clientId,
             userId,
-            state: 'pendiente'
+            state: state
         }).catch(err =>{
             console.log(err);
             return null;
@@ -55,7 +55,7 @@ const editCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto
             nro: nro ? nro : coti.nro,
             bruto: bruto ? bruto : coti.bruto,
             descuento: descuento ? descuento : coti.descuento,
-            iva: iva ? iva : coti.iva,
+            iva: iva,
             neto: neto ? neto : coti.neto,
             state
         }, {
@@ -104,6 +104,8 @@ const updateState = async (cotizacionId, state) => {
         res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
     }
 }
+
+
 
 
 module.exports = {

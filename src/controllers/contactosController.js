@@ -31,7 +31,7 @@ const createContact = async (req, res) => {
         // Recibo toda la informacion por body
         const { clientId, asesorId, nombre, phone, email, rango } = req.body; 
         // Validamos que entren los datos necesarios
-        if(!nombre || !phone) res.status(501).json({msg: 'Parametros no validos.'});
+        if(!nombre || !phone) return res.status(501).json({msg: 'Parametros no validos.'});
 
         // caso contrario, creamos el cliente.
         const createContact = await contact.create({
@@ -49,7 +49,21 @@ const createContact = async (req, res) => {
 
         if(!createContact) return res.status(502).json({msg: 'No hemos podido crear esto.'});
         // Caso contrario, enviamos respuesta.
-        res.status(201).json(createContact);
+        const searchCl = await client.findOne({
+            where: {
+                id: clientId,
+            },
+            include:[{
+                model: contact
+            }]
+        }).catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if(!searchCl) return res.status(404).json({msg:'No hemos encontrado esto.'});
+        // Caso contrario, avanzamos
+        res.status(201).json(searchCl);
 
     }catch(err ){
         console.log(err);

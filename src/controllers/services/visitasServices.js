@@ -20,7 +20,7 @@ const createVisitaServices = async (title, clientId, userId, time, hour ) => {
             let body = {
                 userId,
                 clientId,
-                visitumId: result.id,
+                visitaId: result.id,
                 type: 'visita',
                 caso: null,
                 contacto: null,

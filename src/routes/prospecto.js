@@ -3,7 +3,8 @@ const { addNote } = require('../controllers/noteControllers');
 const { newProspect, newTag, nuevaFuente, deleteTags, 
     deleteFuente, getAllTagsAndFuentes, getAllProspectos, DontCallProspecto, 
     aplazarProspecto, convertirToClient, 
-    NoInteresProspecto} = require('../controllers/prospectoController');
+    NoInteresProspecto,
+    getFuente} = require('../controllers/prospectoController');
 const router = express.Router(); 
  
 // CLIENTES
@@ -25,7 +26,7 @@ router.route('/aplazar')
 router.route('/sinInteres')
     .put(NoInteresProspecto)
 
-    
+
 router.route('/createClient')
     .post(convertirToClient)
 
@@ -38,5 +39,8 @@ router.route('/deleteTag/:id')
 router.route('/addFuente')
     .post(nuevaFuente)
     .put(deleteFuente)
+
+router.route('/getFuente/:nameFuente') 
+    .get(getFuente)
 
 module.exports = router;

@@ -128,6 +128,34 @@ const deleteFuente = async (req, res) => {
         res.status(500).json({msg: 'Ha ocurrido un error en la principal.'});
     }
 }
+// Obtener fuente
+const getFuente = async (req, res) => {
+    try{
+        const { nameFuente } = req.params;
+        // Validamos que entre
+        if(!nameFuente) return res.status(501).json({msg: 'No reconocemos este nombre'})
+    
+        // Caso contrario, avanzamos
+        const searchFuente = await fuente.findOne({
+            where: {
+                nombre: nameFuente,
+                state: 'active'
+            }
+        }).catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if(!searchFuente) return res.status(404).json({msg: 'No reconocemos esta fuente'});
+        // Caso contrario
+        res.status(200).json(searchFuente);
+
+    }catch(err){    
+        console.log(err);
+        res.status(500).json({msg:'ha ocurrido un error en la principal.'});
+    }
+}
+
 // Nueva fuente
 const nuevaFuente = async (req, res) => {
     try{
@@ -163,11 +191,11 @@ const newProspect = async (req, res) => {
 
         if(!namePersona || !phone || !fuenteId) return res.status(501).json({msg: 'Parametros invalidos.'})
 
-        const add = await newProspecto(nombreEmpresa, namePersona, phone, email, type, cargo, url, direccion, city, fijo, fuenteId)
+        const add = await newProspecto(nombreEmpresa, namePersona, phone, email, type, cargo, url, direccion, city, fijo, fuenteId, type)
         .then((res) => {
             console.log('entra')
             return res
-        })
+        }) 
         .catch(err => {
             console.log(err);
             return null;
@@ -486,4 +514,5 @@ module.exports = {
     aplazarProspecto, // APLAZO
     convertirToClient, // Convertir a cliente.
     NoInteresProspecto,
+    getFuente,          // Obtener fuente por nombre
 }

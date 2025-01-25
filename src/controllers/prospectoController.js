@@ -201,7 +201,7 @@ const newProspect = async (req, res) => {
             return null;
         })
 
-        res.status(200).json({msg: 'Termino'})
+        res.status(200).json(add)
 
     }catch(err){
         console.log(err);

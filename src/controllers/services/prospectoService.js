@@ -150,7 +150,8 @@ const newProspecto = async(nombreEmpresa, namePersona,
             namePersona,
             phone,
             email,
-            type, cargo,
+            type, 
+            cargo,
             url,
             direccion,
             city,
@@ -165,7 +166,7 @@ const newProspecto = async(nombreEmpresa, namePersona,
         if(!newProspecto){
             return 502
         }else{
-            return 201
+            return newProspecto
         }
     }catch(err){
         console.log(err);

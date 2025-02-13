@@ -158,8 +158,8 @@ const createVisita = async (req, res) => {
         // Recibo toda la informacion por body
         const { title, clientId, userId, time, hour, contactId } = req.body; 
         // Validamos que entren los datos necesarios
-        if(!title || !clientId || !userId || !hour) res.status(501).json({msg: 'Parametros no validos.'});
-
+        if(!title || !clientId || !userId || !hour) return res.status(501).json({msg: 'Parametros no validos.'});
+ 
         // caso contrario, creamos el cliente.
         const createCliente = await visita.create({
             title,

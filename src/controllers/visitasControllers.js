@@ -165,7 +165,7 @@ const createVisita = async (req, res) => {
             title,
             clientId,
             userId,
-            contactId: parseInt(contactId),
+            contactId: contactId,
             state: 'active' 
         })
         .then(async (result) => {

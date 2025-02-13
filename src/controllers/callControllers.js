@@ -48,6 +48,8 @@ const getCalls = async (req, res) => {
                     }]
                 }, {
                     model: calendary
+                }, {
+                    model: user
                 }],
             }).catch(err => {
                 console.log(err);
@@ -78,6 +80,8 @@ const getCalls = async (req, res) => {
                     }]
                 }, {
                     model: calendary
+                },{
+                    model: user
                 }],
                 order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
 

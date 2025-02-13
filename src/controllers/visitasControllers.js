@@ -47,6 +47,8 @@ const getVisitas = async (req, res) => {
                     }]
                 }, {
                     model: calendary
+                }, {
+                    model: user
                 }],
                 order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
             }).catch(err => {
@@ -78,6 +80,8 @@ const getVisitas = async (req, res) => {
                     }]
                 }, {
                     model: calendary
+                }, {
+                    model: user
                 }],
                 order: [['createdAt', 'DESC'], [{ model: client}, { model: register}, 'createdAt', 'ASC']],
 
@@ -125,6 +129,9 @@ const getVisita = async (req, res) => {
                 where: {
                     state: 'active'
                 }
+            },
+            {
+                model: user
             }],
 
             

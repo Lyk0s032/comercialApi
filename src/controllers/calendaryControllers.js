@@ -178,7 +178,7 @@ const sendEmaiToTalentoHumano = async (req, res) => {
  
     const sendEmail  = await resend.emails.send({
         from: 'CRM - Área comercial <areacomercial@noahdigital.com.co>',
-        to: ["kabo200127@gmail.com", `${emailAsesor}`],
+        to: ["asistenteth@metalicascosta.com.co", "auxadministrativo@metalicascosta.com.co", `${emailAsesor}`],
         subject: "Informe de visita de asesor",
         html: `
         <html>
@@ -193,16 +193,15 @@ const sendEmaiToTalentoHumano = async (req, res) => {
                     </p>
                 </div>
                 <div>
-                    <br /><br />
                     <span>
                     Se informa que el asesor <strong>${asesor}</strong> tiene programada una reunión de manera presencial con el cliente ${cliente}. <br ><br>
-                    Lugar reunión: ${direccion} 
-                    Fecha reunión: ${fecha}.
+                    Lugar reunión: ${direccion}. <br >
+                    Fecha reunión: ${fecha}. <br ><br>
 
                     Horario de visita al cliente:
-                    De: ${de} a ${a}
+                    De: ${de} a ${a} <br ><br>.
 
-                    Metódo de transporte: ${transporte}
+                    Metódo de transporte: ${transporte}. <br ><br>
 
                     Atentamente;
                     Área comercial

@@ -204,7 +204,7 @@ const getAllAsesores = async(req, res) => {
         const searchUser = await user.findByPk(userId).catch(err => null)
         if(!searchUser) return res.status(404).json({msg: 'No hemos encontrado esto.'});
         // Caso contrario, avanzamos
-        if(searchUser.rango == 'lider'){
+        if(searchUser.rango == 'lider' || searchUser.rango == 'comercial'){
             const searchAllAsesores = await user.findAll({
                 where: {
                     rango: 'asesor' 

@@ -222,7 +222,10 @@ const getAllProspectos = async (req, res) => {
                 model: calendary
             }, {
                 model: register
-            }]
+            }, {
+                model: fuente
+            }],
+            order: [['createdAt', 'DESC']]
         })
         .catch(err => {
             console.log(err);

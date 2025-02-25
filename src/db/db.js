@@ -26,7 +26,7 @@ const modelNotes = require('./model/notes');
 const modelCotizacion = require('./model/cotizacion');
 const entorno = true;
 
-let dburl = entorno ? 'postgresql://postgres:iuMqfaTmcmgxbvRoWpjRoZeatXVoQuJo@postgres.railway.internal:5432/railway' : 'postgres:postgres:123@localhost:5432/comercial';
+let dburl = entorno ? 'postgresql://postgres:iuMqfaTmcmgxbvRoWpjRoZeatXVoQuJo@autorack.proxy.rlwy.net:41336/railway' : 'postgres:postgres:123@localhost:5432/comercial';
  
 const sequelize = new Sequelize(dburl, {
     logging: false,

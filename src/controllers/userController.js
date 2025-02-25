@@ -38,10 +38,7 @@ const signIn = async(req, res) => {
             where: {
                 phone:phone
             },
-            include:[{
-                model:calendary,
-                required:false
-            }]
+
         }).catch(err => {
             console.log(err);
             return null;

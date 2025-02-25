@@ -19,26 +19,27 @@ axios.defaults.baseURL = 'https://comercialapi-production.up.railway.app/';
 
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodyParser.json({ limit: '50mb' }));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*'); // update to match the domain you will make the request from
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  next();
-});
+// app.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', '*'); // update to match the domain you will make the request from
+//   res.header('Access-Control-Allow-Credentials', 'true');
+//   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+//   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+//   next();
+// });
 
 // Ruta de iniciacion
 const corstOptions = {
   origin: '*',
   credentials: true
 }
+app.use(cors(corstOptions))
 
 
 app.get('/', (req, res)  => {
     res.send('Running Server to CRM comercial - Costa Center'); 
 })
 
-app.get('/sign/user', cors(corstOptions), isAuthenticated, (req, res) => {
+app.get('/sign/user',  isAuthenticated, (req, res) => {
   try {
     console.log(req.user);
     console.log('entra')

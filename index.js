@@ -34,12 +34,11 @@ const corstOptions = {
 }
 
 
-
 app.get('/', (req, res)  => {
     res.send('Running Server to CRM comercial - Costa Center'); 
 })
 
-app.get('/sign/user/', cors(corstOptions), isAuthenticated, (req, res) => {
+app.get('/sign/user', cors(corstOptions), isAuthenticated, (req, res) => {
   try {
     console.log(req.user);
     console.log('entra')

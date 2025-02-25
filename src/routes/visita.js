@@ -1,5 +1,5 @@
 const express = require('express');
-const { createVisita, cancelVisita, getVisitas, aplazarVisita, SinInteresVisita, getVisita, agendaCotizacion } = require('../controllers/visitasControllers');
+const { createVisita, cancelVisita, getVisitas, aplazarVisita, SinInteresVisita, getVisita, agendaCotizacion, cumplirVisita } = require('../controllers/visitasControllers');
 const router = express.Router();
 
 // CLIENTES
@@ -26,6 +26,7 @@ router.route('/sinInteres')
 router.route('/aplazar')
     .put(aplazarVisita)
 
-
+router.route('/cumplir')
+    .put(cumplirVisita)
 
 module.exports = router;

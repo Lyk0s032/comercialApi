@@ -321,6 +321,40 @@ const aplazarVisita = async(req, res) => {
     }
 }
 
+// Aplazar
+const cumplirVisita = async(req, res) => {
+    try{ 
+        // Recibimos los datos por body
+        const { visitaId, userId, clientId, calendaryId } = req.body;
+        // Validamos
+        if(!visitaId || !clientId || !userId || !calendaryId) return res.status(501).json({msg: 'Parametros no validos.'});
+        // Caso contrario, avanzamos
+        // Actualizamos el estado.
+        const updateCall = await visita.update({
+            state: 'cumplida',
+        }, {
+            where: {
+                id: visitaId
+            }
+        })
+        .then(async(result) => {
+            const cumplida = await cumplido(calendaryId, null)
+            return result
+        })
+        .catch(err => {
+            console.log(err);
+            return null
+        })
+
+        if(!updateCall) return res.status(502).json({msg: 'No hemos logrado actualizar esto.'});
+        // Caso contrario, avanzamos
+        res.status(200).json({msg:'Actualizado con exito'});
+    }catch(err){
+        console.log(err);
+        res.status(500).json({msg: 'Ha ocurrido un error en la principal'});
+    }
+}
+
 // No tuvo interes
 const SinInteresVisita = async (req, res) => {
     try{
@@ -443,6 +477,7 @@ module.exports = {
     createVisita,
     cancelVisita,
     aplazarVisita,
+    cumplirVisita,
     SinInteresVisita,
     getVisita,
     agendaCotizacion // Agendar cotización

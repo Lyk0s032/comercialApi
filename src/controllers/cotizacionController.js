@@ -56,7 +56,7 @@ const getThisMonthCotizacion = async (req, res) => {
         
         const searchUser = await user.findByPk(userId).catch(err => null);
         const inicioMes = dayjs(`${ano}-${month}-06` ) // Primer día del mes en UTC
-        const finMes = dayjs(`${ano}-${Number(month)+Number(1)}-05` ) // Último día del mes en UTC
+        const finMes = dayjs(`${ano}-${Number(month)+Number(1)}-06` ) // Último día del mes en UTC
 
         if(!searchUser) return res.status(404).json({msg: 'No hemos encontrado este usuario.'});
         // Caso contrario

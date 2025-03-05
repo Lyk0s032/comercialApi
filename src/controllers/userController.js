@@ -243,7 +243,7 @@ const getAllUserById = async(req, res) => {
                     model: cotizacion,
                     where: {
                         state:{
-                            [Op.or]: ['pendiente', 'desarrollo']
+                            [Op.or]: ['pendiente', 'aplazado', 'desarrollo']
                         }
                     },
                     include:[{

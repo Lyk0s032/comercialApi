@@ -107,7 +107,7 @@ const getDataUserByMonth = async(req, res) => {
                 model: cotizacion,
                 where: {
                     state:{
-                        [Op.or]: ['aplazado', 'perdido']
+                        [Op.in]: ['aplazado', 'perdido']
                     },
                     fechaAprobada: {
                         [Op.between]: [inicioMes.toDate(), finMes.toDate()]

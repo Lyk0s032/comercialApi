@@ -47,7 +47,7 @@ const addNoteManual = async(req, res) => {
     try{
         // Recibimos datos por body
         const { userId, clientId, 
-        callId, visitaId, prospectId, type, contacto, prospecto, note } = req.body;
+        callId, visitaId, prospectId, type, contacto, prospecto, note, cotizacionId} = req.body;
     
                 
         const addNote = await register.create({
@@ -63,7 +63,8 @@ const addNoteManual = async(req, res) => {
             userId,
             prospectoId: prospectId,
             calendaryId: null,
-            visitumId: visitaId 
+            visitumId: visitaId,
+            cotizacionId
         }).catch(err =>{
             console.log(err);
             return null;

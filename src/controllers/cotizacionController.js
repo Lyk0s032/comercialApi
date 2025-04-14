@@ -1,5 +1,5 @@
 const express = require('express');
-const { client, user, calendary, cotizacion } = require('../db/db');
+const { client, user, calendary, cotizacion, register } = require('../db/db');
 const { Op } = require('sequelize');
 
 const bcrypt = require('bcrypt');
@@ -12,6 +12,35 @@ const { aplazado, cumplido } = require('./services/calendaryServices');
 const { default: axios } = require('axios');
 
 // CONTROLADORES DE COTIZACIONES
+// Obtener notas de la cotización
+const getNotesByCotizacion = async (req, res) => {
+    try{
+        // Recibimos parámetros por params
+        const { cotizacionId } = req.params;
+        // Validamos
+        if(!cotizacionId) return res.status(501).json({msg: 'Parámetros no son validos.'});
+        // Caso contrario, avanzamos
+        const searchRegisters = await register.findAll({
+            where: {
+                cotizacionId
+            },
+            include:[{
+                model: user
+            }],
+            order: [['createdAt', 'DESC']]
+        }).catch(err => {
+            console.log(err);
+            return null;
+        })
+        if(!searchRegisters) return res.status(404).json({msg: 'Sin registros'});
+        
+        res.status(200).json(searchRegisters)
+        
+    }catch(err){
+        console.log(err);
+        res.status(500).json({msg: 'Ha ocurrido un error en la principal.'});
+    }
+}
 // OBTENER TODAS LAS COTIZACIONES
 const getCotizacionById = async ( req, res) => {
     try{
@@ -385,5 +414,6 @@ module.exports = {
     aplazarCotizacion,
     getAllCotizacions,
     getCotizacionById, // Obtener cotización particular.
-    getThisMonthCotizacion
+    getThisMonthCotizacion,
+    getNotesByCotizacion, // Traer cotizaciones
 }

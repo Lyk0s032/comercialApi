@@ -125,6 +125,8 @@ const addNoteManual = async(req, res) => {
             // Caso contrario, envio respuesta
             return res.status(201).json(searchVisita);
         }
+
+        res.status(200).json({msg: 'ingresar'})
         
     }catch(err){
         console.log(err);

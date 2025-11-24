@@ -12,7 +12,7 @@ const routes = require('./src/routes');
 const { default: axios } = require('axios');
 const isAuthenticated = require('./src/controllers/authentication');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 axios.defaults.baseURL = 'https://comercialapi-production.up.railway.app/';
 // axios.defaults.baseURL = 'http://192.168.1.15:3000/';

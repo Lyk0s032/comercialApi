@@ -24,6 +24,9 @@ const modelNotes = require('./model/notes');
 
 // Modelo de cotizacion
 const modelCotizacion = require('./model/cotizacion');
+
+// Modelo de probabilidad
+const modelProbability = require('./model/probability');
 const entorno = true;
 
 let dburl = entorno ? 'postgresql://postgres:iuMqfaTmcmgxbvRoWpjRoZeatXVoQuJo@autorack.proxy.rlwy.net:41336/railway' : 'postgres:postgres:123@localhost:5432/comercial';
@@ -48,8 +51,9 @@ modelVisita(sequelize);
 modelCalendary(sequelize);
 modelNotes(sequelize);
 modelCotizacion(sequelize)            // Cotizacion
+modelProbability(sequelize);
 
-const { user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, meta } = sequelize.models;
+const { user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta } = sequelize.models;
 
 
 // USUARIO Y METAS
@@ -60,6 +64,14 @@ user.hasMany(meta, {
 });
 
 meta.belongsTo(user);
+ 
+
+cotizacion.hasMany(probability, {
+  foreignKey: 'cotizacionId', // Clave foránea en la tabla contact
+  onDelete: 'CASCADE',    // Opcional: elimina los posts si se elimina el usuario
+});
+
+probability.belongsTo(cotizacion);
 
 // FUENTES Y PROSPECTOS
 
@@ -82,7 +94,7 @@ client.hasMany(contact, {
 contact.belongsTo(client);
 
 
-
+ 
 contact.hasMany(call, {
   foreignKey: 'contactId'
 })

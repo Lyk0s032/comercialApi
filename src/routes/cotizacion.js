@@ -1,5 +1,5 @@
 const express = require('express');
-const { addCotizacionToCRM, updateCotizacionToCRM, changeStateCotizacion, addCotiDesarrollo, aplazarCotizacion, getAllCotizacions, getCotizacionById, getThisMonthCotizacion, getNotesByCotizacion } = require('../controllers/cotizacionController');
+const { addCotizacionToCRM, updateCotizacionToCRM, changeStateCotizacion, addCotiDesarrollo, aplazarCotizacion, getAllCotizacions, getCotizacionById, getThisMonthCotizacion, getNotesByCotizacion, giveProbability } = require('../controllers/cotizacionController');
 const router = express.Router();
 
 router.route('/getNotes/notes/:cotizacionId')
@@ -24,4 +24,7 @@ router.route('/aplazar')
 
 router.route('/state')
     .put(changeStateCotizacion)
+ 
+router.route('/give/calification/')
+    .post(giveProbability)
 module.exports = router;

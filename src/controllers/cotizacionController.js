@@ -1,5 +1,5 @@
 const express = require('express');
-const { client, user, calendary, cotizacion, register } = require('../db/db');
+const { client, user, calendary, cotizacion, register, probability } = require('../db/db');
 const { Op } = require('sequelize');
 
 const bcrypt = require('bcrypt');
@@ -11,7 +11,33 @@ const dayjs = require('dayjs');
 const { aplazado, cumplido } = require('./services/calendaryServices');
 const { default: axios } = require('axios');
 
+
 // CONTROLADORES DE COTIZACIONES
+// Dar probabilidad a una cotización
+const giveProbability = async (req, res) => {
+    try{
+        // Recibimos datos por body
+        const { cotizacionId, number } = req.body;
+        if(!cotizacionId || !number) return res.status(400).json({msg: 'Los parámetros no son validos'});
+        // Caso contrario, avanzamos
+
+        const addCalification = await probability.create({
+            probability: number,
+            cotizacionId
+        }).catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if(!addCalification) return res.status(502).json({msg: 'No hemos logrado crear esto.'});
+        // Caso contrario, avanzamos.
+        res.status(201).json(addCalification)
+    }catch(err){
+        console.log(err);
+        res.status(500).json({msg: 'ha ocurrido un error en la principal.'});
+    }
+}
+
 // Obtener notas de la cotización
 const getNotesByCotizacion = async (req, res) => {
     try{
@@ -416,4 +442,5 @@ module.exports = {
     getCotizacionById, // Obtener cotización particular.
     getThisMonthCotizacion,
     getNotesByCotizacion, // Traer cotizaciones
+    giveProbability, // Dar calificación
 }

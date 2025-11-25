@@ -375,16 +375,15 @@ const searchClientWithMoreAprobadas = async(req, res) => {
     try {
         const { ano, month} = req.params;
 
-        const inicioMes = dayjs(`${ano}-${month}-06` ) // Primer día del mes en UTC
-        const finMes = dayjs(`${ano}-${Number(month)+Number(1)}-05` ) // Último día del mes en UTC
-
+        const inicioMes = dayjs(`${ano}-${month}-06`);
+        const finMes = dayjs(`${ano}-${Number(month)+1}-05`);
 
         const SearchClientes = await client.findAll({
             attributes: [
                 'id',
-                'nombreEmpresa',  // Otros campos que quieras mostrar de los clientes
+                'nombreEmpresa',
                 'type',
-                'photo', 
+                'photo',
                 [
                     Sequelize.literal(
                       `(SELECT COUNT(*) 
@@ -405,21 +404,33 @@ const searchClientWithMoreAprobadas = async(req, res) => {
                 }
             }],
             order: [
-                [Sequelize.literal('(SELECT COUNT(*) FROM "cotizacions" WHERE "cotizacions"."clientId" = "client"."id" AND "cotizacions"."state" = \'aprobada\')'), 'DESC']
+                [
+                    Sequelize.literal(
+                      `(SELECT COUNT(*) 
+                        FROM "cotizacions" 
+                        WHERE "cotizacions"."clientId" = "client"."id" 
+                        AND "cotizacions"."state" = 'aprobada'
+                        AND "cotizacions"."fechaAprobada" BETWEEN '${inicioMes.format('YYYY-MM-DD')}' AND '${finMes.format('YYYY-MM-DD')}')`
+                    ),
+                    'DESC'
+                ]
             ],
             limit: 20,
         }).catch(err => {
             console.log(err);
             return null;
         });
-        if(!SearchClientes || !SearchClientes.length) return res.status(404).json({msg: 'No hemos encontrado resultados.'});
-        // Caso contrario
-        // Mostrar los resultados
+
+        if(!SearchClientes || !SearchClientes.length) 
+            return res.status(404).json({msg: 'No hemos encontrado resultados.'});
+
         res.status(200).json(SearchClientes);
+
     } catch (error) {
         console.error('Error al obtener los clientes:', error);
     }
 }
+
 // MOSTRAR POR TYPE
 const searchCountForType = async(req, res) => {
     try {

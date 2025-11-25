@@ -186,7 +186,10 @@ const getAllCotizacions = async (req, res) => {
                     model: client
                 }, {
                     model: user
-                }]
+                }],
+                order: [
+                    ['createdAt', 'DESC']   // 👈 Ordena por fecha de creación (más reciente primero)
+                ]
             })
             .catch(err => null);
 
@@ -208,7 +211,10 @@ const getAllCotizacions = async (req, res) => {
                     model: client
                 }, {
                     model: user
-                }]
+                }],
+                order: [
+                    ['createdAt', 'DESC']   // 👈 Ordena por fecha de creación (más reciente primero)
+                ]
             })
             .catch(err => null);
 
@@ -222,6 +228,30 @@ const getAllCotizacions = async (req, res) => {
         console.log(err);
         return res.status(404).json({msg: 'Ha ocurrido un error en la principal.'});
 
+    }
+}
+
+// Buscar cliente por NIT
+const findClientByNIT = async (req, res) => {
+    try{
+        // Recibimos datos por params
+        const { nit } = req.params;
+        if(!nit) return res.status(400).json({msg: 'No hemos encontrado esto.'});
+        // Caso contrario, avanzamos
+
+        const searchClient = await client.findOne({
+            where: {
+                nit
+            }
+        })
+
+        if(!searchClient) return res.status(404).json({msg: 'No hemos encontrado este cliente'});
+        // Caso contrario, avanzamos
+        res.status(200).json(searchClient);
+
+    }catch(err){
+        console.log(err);
+        res.status(500).json({msg: 'Ha ocurrido un error en la principal.'});
     }
 }
 // CREAR EVENTO EN EL CALENDARIO
@@ -319,6 +349,9 @@ const changeStateCotizacion = async (req, res) => {
         res.status(500).json({msg: 'Ha ocurrido un error en la principal.'});
     }
 }
+
+
+
 // COTIZACION EN DESARROLLO
 const addCotiDesarrollo = async (req, res) =>{
     try{
@@ -443,4 +476,5 @@ module.exports = {
     getThisMonthCotizacion,
     getNotesByCotizacion, // Traer cotizaciones
     giveProbability, // Dar calificación
+    findClientByNIT, // Encontrar cliente por NIT
 }

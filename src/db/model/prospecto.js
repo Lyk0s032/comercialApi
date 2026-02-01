@@ -38,6 +38,9 @@ module.exports = sequelize => {
         fijo: {
             type: DataTypes.STRING
         },
+        mensaje:{
+            type: DataTypes.TEXT
+        },
         state: { // Proceso, Perdido, Ganado
             type: DataTypes.STRING
         }

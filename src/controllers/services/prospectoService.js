@@ -139,7 +139,7 @@ const newFuente = async (name, type) => {
 }
 
 const newProspecto = async(nombreEmpresa, namePersona,
-    phone, email, type, cargo, url, direccion, city, fijo, fuenteId
+    phone, email, type, cargo, url, direccion, city, fijo, fuenteId, mensaje
 ) => {
     try {
         if(!namePersona || !phone) return 501
@@ -157,6 +157,7 @@ const newProspecto = async(nombreEmpresa, namePersona,
             city,
             fijo,
             fuenteId,
+            mensaje,
             state: 'intento 1'
         }).catch(err => {
             console.log(err);

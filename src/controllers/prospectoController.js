@@ -184,30 +184,93 @@ const nuevaFuente = async (req, res) => {
 
 // New Prospecto
 const newProspect = async (req, res) => {
-    try{
-        // Recibimos datos por body
-        const {nombreEmpresa, namePersona, phone, email, type, cargo, url, direccion, city, fijo, fuenteId} = req.body;
-        // Validamos que los parametros lleguen correctamente.
+    try {
+        const { 
+            nombreEmpresa, namePersona, phone, email, 
+            type, cargo, url, direccion, city, 
+            fijo, fuenteId, mensaje 
+        } = req.body;
 
-        if(!namePersona || !phone || !fuenteId) return res.status(501).json({msg: 'Parametros invalidos.'})
+        // 1. Validación temprana (Fail-fast)
+        if (!namePersona || !phone || !fuenteId) {
+            return res.status(400).json({ msg: 'Faltan campos obligatorios: nombre, teléfono o fuente.' });
+        }
 
-        const add = await newProspecto(nombreEmpresa, namePersona, phone, email, type, cargo, url, direccion, city, fijo, fuenteId, type)
-        .then((res) => {
-            console.log('entra')
-            return res
-        }) 
-        .catch(err => {
-            console.log(err);
-            return null;
-        })
+        // 2. Ejecución limpia con await
+        // Asegúrate de que el orden de los parámetros coincida con la definición de la función
+        const result = await newProspecto(
+            nombreEmpresa, namePersona, phone, email, 
+            type, cargo, url, direccion, city, 
+            fijo, fuenteId, mensaje 
+        );
 
-        res.status(200).json(add)
+        // 3. Respuesta lógica
+        if (!result) {
+            return res.status(400).json({ msg: 'No se pudo crear el prospecto. Verifique los datos.' });
+        }
 
-    }catch(err){
-        console.log(err);
-        res.status(500).json({msg:'Ha ocurrido un error en la principal.'});
+        return res.status(201).json(result); // 201 significa "Created"
+
+    } catch (err) {
+        console.error("Error en New Prospecto:", err);
+        return res.status(500).json({ msg: 'Error interno del servidor.' });
     }
 }
+
+// Ruta 
+// controllers/prospectExternal.controller.js
+
+const newProspectExternal = async (req, res) => {
+    try {
+      // Nombres externos (bonitos)
+      const { contactName, phone, email, sourceId, message } = req.body;
+  
+      // Validación mínima
+      if (!contactName || !phone || !sourceId) {
+        return res.status(400).json({
+          error: 'VALIDATION_ERROR',
+          message: 'contactName, phone and sourceId are required'
+        });
+      }
+      let type = 'digital';
+      // Mapping a nombres internos (legacy)
+      const result = await newProspecto(
+        null,            // nombreEmpresa
+        contactName,     // namePersona
+        phone,
+        email || null, 
+        type,            // type
+        null,            // cargo
+        null,            // url
+        null,            // direccion
+        null,            // city
+        null,            // fijo
+        sourceId,        // fuenteId
+        message || null
+      );
+  
+      if (!result) {
+        return res.status(400).json({
+          error: 'CREATION_FAILED',
+          message: 'Prospect could not be created'
+        });
+      }
+  
+      return res.status(201).json({
+        id: result.id,
+        status: 'created'
+      });
+  
+    } catch (err) {
+      console.error('Error en New Prospect External:', err);
+      return res.status(500).json({
+        error: 'INTERNAL_ERROR'
+      });
+    }
+  };
+  
+  
+  
 
 const getAllProspectos = async (req, res) => {
     try{
@@ -518,4 +581,5 @@ module.exports = {
     convertirToClient, // Convertir a cliente.
     NoInteresProspecto,
     getFuente,          // Obtener fuente por nombre
+    newProspectExternal, // Nuevo prospecto externo
 }

@@ -4,7 +4,8 @@ const { newProspect, newTag, nuevaFuente, deleteTags,
     deleteFuente, getAllTagsAndFuentes, getAllProspectos, DontCallProspecto, 
     aplazarProspecto, convertirToClient, 
     NoInteresProspecto,
-    getFuente} = require('../controllers/prospectoController');
+    getFuente,
+    newProspectExternal} = require('../controllers/prospectoController');
 const router = express.Router(); 
  
 // CLIENTES
@@ -15,7 +16,8 @@ router.route('/get')
     .get(getAllTagsAndFuentes)
 router.route('/create')
     .post(newProspect)
-
+router.route('/external/prospects')
+    .post(newProspectExternal)
 // EMBUDO
 router.route('/dontCall')
     .put(DontCallProspecto)

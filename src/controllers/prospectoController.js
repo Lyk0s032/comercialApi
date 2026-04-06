@@ -1,6 +1,6 @@
 const express = require('express');
-const { tag, fuente, prospecto, register, client, calendary } = require('../db/db');
-const { Op } = require('sequelize');
+const { tag, fuente, prospecto, register, client, calendary, dataProspect } = require('../db/db');
+const { Op, Sequelize } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { newProspecto, addTag, newFuente, removeTag, updateFuente, getAllTags, getFuentes } = require('./services/prospectoService');
@@ -561,12 +561,129 @@ const NoInteresProspecto = async (req, res) => {
         res.status(500).json({msg: 'Ha ocurrido un error en la principal.'})
     }
 }
-// Crear función para pasar de prospecto a cliente
-// Después, agendar visita o llamada.
-// Después, no tiene interés.
+// ══════════════════════════════════════════════════════════════════════
+//  GET /prospecto/getAllWithData
+//  Prospectos + dataProspect con filtros combinables por query params.
 //
-// Hacer panel de llamadas, visitas y cotizaciones.
-//
+//  Filtros disponibles (todos opcionales y combinables):
+//   - desde / hasta      → rango de fechas (createdAt). Si se usa,
+//                          se incluyen TODOS los estados.
+//                          Sin rango → solo intento 1, 2 y 3.
+//   - fuenteId           → filtra por fuente del prospecto
+//   - venta              → 'true' | 'false' — campo en dataProspect
+//   - asesorAsignado     → ID del asesor en dataProspect
+//   - valorCotizadoMin   → valor mínimo cotizado (numérico)
+//   - valorCotizadoMax   → valor máximo cotizado (numérico)
+// ══════════════════════════════════════════════════════════════════════
+const getProspectosWithDataFilter = async (req, res) => {
+    try {
+        const {
+            desde,
+            hasta,
+            fuenteId,
+            venta,
+            asesorAsignado,
+            valorCotizadoMin,
+            valorCotizadoMax,
+        } = req.query;
+
+        // ── 1. WHERE del prospecto ────────────────────────────────────
+        const whereProspecto = {};
+
+        // Rango de fechas → todos los estados. Sin rango → solo activos
+        if (desde || hasta) {
+            const rangoFecha = {};
+            if (desde) rangoFecha[Op.gte] = new Date(desde);
+            if (hasta) rangoFecha[Op.lte] = new Date(hasta);
+            whereProspecto.createdAt = rangoFecha;
+        } else {
+            whereProspecto.state = { [Op.in]: ['intento 1', 'intento 2', 'intento 3'] };
+        }
+
+        // Filtro por fuente
+        if (fuenteId) whereProspecto.fuenteId = Number(fuenteId);
+
+
+        // ── 2. WHERE del dataProspect ─────────────────────────────────
+        const whereData  = {};
+        const andLiteral = []; // Para condiciones con CAST (valorCotizado)
+        let   requiredData = false; // false = LEFT JOIN, true = INNER JOIN
+
+        // Filtro por venta (boolean)
+        if (venta !== undefined && venta !== '') {
+            whereData.venta = venta === 'true';
+            requiredData = true;
+        }
+
+        // Filtro por asesor asignado
+        if (asesorAsignado) {
+            whereData.asesorAsignado = Number(asesorAsignado);
+            requiredData = true;
+        }
+
+        // Filtro por rango de valorCotizado
+        // valorCotizado es STRING en BD → hacemos CAST a NUMERIC en PostgreSQL.
+        // parseFloat() sanitiza el input: solo deja pasar números.
+        if (valorCotizadoMin && !isNaN(parseFloat(valorCotizadoMin))) {
+            andLiteral.push(
+                Sequelize.where(
+                    Sequelize.cast(Sequelize.col('dataProspect.valorCotizado'), 'NUMERIC'),
+                    { [Op.gte]: parseFloat(valorCotizadoMin) }
+                )
+            );
+            requiredData = true;
+        }
+        if (valorCotizadoMax && !isNaN(parseFloat(valorCotizadoMax))) {
+            andLiteral.push(
+                Sequelize.where(
+                    Sequelize.cast(Sequelize.col('dataProspect.valorCotizado'), 'NUMERIC'),
+                    { [Op.lte]: parseFloat(valorCotizadoMax) }
+                )
+            );
+            requiredData = true;
+        }
+
+        // Unimos condiciones del dataProspect
+        if (andLiteral.length) whereData[Op.and] = andLiteral;
+
+        const dataProspectInclude = {
+            model:    dataProspect,
+            required: requiredData,
+            ...(Object.keys(whereData).length && { where: whereData }),
+        };
+
+
+        // ── 3. QUERY ──────────────────────────────────────────────────
+        const results = await prospecto.findAll({
+            where: whereProspecto,
+            include: [
+                dataProspectInclude,
+                { model: calendary },
+                { model: register  },
+                { model: fuente    },
+            ],
+            order: [['createdAt', 'DESC']],
+        }).catch(err => {
+            console.error('[getProspectosWithDataFilter]', err);
+            return null;
+        });
+
+        if (!results) {
+            return res.status(500).json({ msg: 'Error al consultar prospectos.' });
+        }
+        if (!results.length) {
+            return res.status(404).json({ msg: 'No se encontraron prospectos con esos filtros.' });
+        }
+
+        return res.status(200).json(results);
+
+    } catch (err) {
+        console.error('[getProspectosWithDataFilter]', err);
+        return res.status(500).json({ msg: 'Error interno del servidor.' });
+    }
+};
+
+
 module.exports = {
     getAllTagsAndFuentes, // Funcion para obtener tags y fuentes
     newTag,
@@ -580,6 +697,7 @@ module.exports = {
     aplazarProspecto, // APLAZO
     convertirToClient, // Convertir a cliente.
     NoInteresProspecto,
-    getFuente,          // Obtener fuente por nombre
-    newProspectExternal, // Nuevo prospecto externo
+    getFuente,               // Obtener fuente por nombre
+    newProspectExternal,     // Nuevo prospecto externo
+    getProspectosWithDataFilter, // Prospectos + dataProspect con filtros
 }

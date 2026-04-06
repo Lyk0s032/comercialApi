@@ -5,7 +5,8 @@ const { newProspect, newTag, nuevaFuente, deleteTags,
     aplazarProspecto, convertirToClient, 
     NoInteresProspecto,
     getFuente,
-    newProspectExternal} = require('../controllers/prospectoController');
+    newProspectExternal,
+    getProspectosWithDataFilter} = require('../controllers/prospectoController');
 const router = express.Router(); 
  
 // CLIENTES
@@ -44,5 +45,10 @@ router.route('/addFuente')
 
 router.route('/getFuente/:nameFuente') 
     .get(getFuente)
+
+// Prospectos + dataProspect con filtros combinables
+// Filtros por query params: desde, hasta, fuenteId, venta, asesorAsignado, valorCotizadoMin, valorCotizadoMax
+router.route('/getAllWithData')
+    .get(getProspectosWithDataFilter)
 
 module.exports = router;

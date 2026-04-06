@@ -22,6 +22,9 @@ const notesRoutes = require('./note'); // NOTAS DE CLIENTE
 // COTIZACION
 const cotizacionRoutes = require('./cotizacion'); // COTIZACIONES
 
+// DATA PROSPECT
+const dataProspectRoutes = require('./dataProspect'); // DATOS ADICIONALES DEL PROSPECTO
+
 
 router.use('/users', userRoutes);
 router.use('/prospecto', prospectoRoutes);
@@ -31,7 +34,8 @@ router.use('/calendario', calendaryRoutes);
 router.use('/call', callRoutes);
 router.use('/visitas', visitaRoutes);
 router.use('/notes', notesRoutes); 
-router.use('/cotizacion', cotizacionRoutes)
+router.use('/cotizacion', cotizacionRoutes);
+router.use('/data-prospect', dataProspectRoutes);
 
 
 

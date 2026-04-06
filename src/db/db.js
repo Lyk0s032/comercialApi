@@ -8,6 +8,7 @@ const modelMetas = require('./model/metas');
 const modelTags = require('./model/tags');
 const modelProspecto = require('./model/prospecto');
 const modelFuente = require('./model/fuente');
+const modelData = require('./model/data');
 
 // Cliente...
 const modelClient = require('./model/client');   // Cliente
@@ -52,8 +53,8 @@ modelCalendary(sequelize);
 modelNotes(sequelize);
 modelCotizacion(sequelize)            // Cotizacion
 modelProbability(sequelize);
-
-const { user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta } = sequelize.models;
+modelData(sequelize);
+const { dataProspect, user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta } = sequelize.models;
 
 
 // USUARIO Y METAS
@@ -81,6 +82,17 @@ fuente.hasMany(prospecto, {
 });
 
 prospecto.belongsTo(fuente);
+
+
+
+// RELACIÓN DEL PROSPECTO CON EL DATAPROSPECTO
+dataProspect.hasMany(prospecto, {
+  foreignKey: 'prospectoId',
+  onDelete: 'CASCADE' 
+});
+prospecto.hasOne(dataProspect, { 
+  foreignKey: 'prospectoId'
+});
 
 // LISTA DE CONTACTOS 
 

@@ -6,7 +6,8 @@ const { newProspect, newTag, nuevaFuente, deleteTags,
     NoInteresProspecto,
     getFuente,
     newProspectExternal,
-    getProspectosWithDataFilter} = require('../controllers/prospectoController');
+    getProspectosWithDataFilter,
+    updateProspecto} = require('../controllers/prospectoController');
 const router = express.Router(); 
  
 // CLIENTES
@@ -50,5 +51,9 @@ router.route('/getFuente/:nameFuente')
 // Filtros por query params: desde, hasta, fuenteId, venta, asesorAsignado, valorCotizadoMin, valorCotizadoMax
 router.route('/getAllWithData')
     .get(getProspectosWithDataFilter)
+
+// Actualizar prospecto por ID
+router.route('/update/:id')
+    .put(updateProspecto)
 
 module.exports = router;

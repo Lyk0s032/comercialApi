@@ -191,10 +191,10 @@ const newProspect = async (req, res) => {
             fijo, fuenteId, mensaje 
         } = req.body;
 
-        // 1. Validación temprana (Fail-fast)
-        if (!namePersona || !phone || !fuenteId) {
-            return res.status(400).json({ msg: 'Faltan campos obligatorios: nombre, teléfono o fuente.' });
-        }
+        // // 1. Validación temprana (Fail-fast)
+        // if (!namePersona || !phone || !fuenteId) {
+        //     return res.status(400).json({ msg: 'Faltan campos obligatorios: nombre, teléfono o fuente.' });
+        // }
 
         // 2. Ejecución limpia con await
         // Asegúrate de que el orden de los parámetros coincida con la definición de la función
@@ -683,6 +683,64 @@ const getProspectosWithDataFilter = async (req, res) => {
     }
 };
 
+// Actualizar prospecto por ID
+const updateProspecto = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombreEmpresa, nombrePersona, telefono, fuente } = req.body;
+
+        if (!id) {
+            return res.status(400).json({ msg: 'El ID del prospecto es requerido.' });
+        }
+
+        const fieldsToUpdate = {};
+        if (nombreEmpresa !== undefined) fieldsToUpdate.nombreEmpresa = nombreEmpresa;
+        if (nombrePersona !== undefined) fieldsToUpdate.namePersona = nombrePersona;
+        if (telefono !== undefined) fieldsToUpdate.phone = telefono;
+        if (fuente !== undefined) fieldsToUpdate.fuenteId = fuente;
+
+        if (Object.keys(fieldsToUpdate).length === 0) {
+            return res.status(400).json({ msg: 'No se proporcionaron campos para actualizar.' });
+        }
+
+        const [rowsUpdated] = await prospecto.update(fieldsToUpdate, {
+            where: { id: Number(id) }
+        }).catch(err => {
+            console.error('[updateProspecto]', err);
+            return [0];
+        });
+
+        if (rowsUpdated === 0) {
+            return res.status(404).json({ msg: 'Prospecto no encontrado o sin cambios.' });
+        }
+
+        const prospectoActualizado = await prospecto.findOne({
+            where: { id: Number(id) },
+            include: [
+                { model: calendary },
+                { model: register },
+                { model: fuente }
+            ]
+        }).catch(err => {
+            console.error('[updateProspecto - findOne]', err);
+            return null;
+        });
+
+        if (!prospectoActualizado) {
+            return res.status(200).json({ msg: 'Prospecto actualizado exitosamente.' });
+        }
+
+        return res.status(200).json({
+            msg: 'Prospecto actualizado exitosamente.',
+            data: prospectoActualizado
+        });
+
+    } catch (err) {
+        console.error('[updateProspecto]', err);
+        return res.status(500).json({ msg: 'Error interno del servidor.' });
+    }
+};
+
 
 module.exports = {
     getAllTagsAndFuentes, // Funcion para obtener tags y fuentes
@@ -700,4 +758,5 @@ module.exports = {
     getFuente,               // Obtener fuente por nombre
     newProspectExternal,     // Nuevo prospecto externo
     getProspectosWithDataFilter, // Prospectos + dataProspect con filtros
+    updateProspecto,         // Actualizar prospecto por ID
 }

@@ -22,7 +22,7 @@ const modelCalendary = require('./model/calendary'); // Calendario de actividade
 
 // Registro o notas
 const modelNotes = require('./model/notes');
-
+const modelNotesCotizacion = require('./model/notesCotizacion');
 // Modelo de cotizacion
 const modelCotizacion = require('./model/cotizacion');
 
@@ -51,10 +51,11 @@ modelCall(sequelize);
 modelVisita(sequelize);
 modelCalendary(sequelize);
 modelNotes(sequelize);
+modelNotesCotizacion(sequelize);
 modelCotizacion(sequelize)            // Cotizacion
 modelProbability(sequelize);
 modelData(sequelize);
-const { dataProspect, user, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta } = sequelize.models;
+const { dataProspect, user, noteCotizacion, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta } = sequelize.models;
 
 
 // USUARIO Y METAS
@@ -73,6 +74,15 @@ cotizacion.hasMany(probability, {
 });
 
 probability.belongsTo(cotizacion);
+
+
+// NOTAS Y COTIZACIONES
+cotizacion.hasMany(noteCotizacion, {
+  foreignKey: 'cotizacionId', // Clave foránea en la tabla contact
+  onDelete: 'CASCADE',    // Opcional: elimina los posts si se elimina el usuario
+});
+
+noteCotizacion.belongsTo(cotizacion);
 
 // FUENTES Y PROSPECTOS
 

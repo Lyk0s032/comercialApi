@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3002;
 
 axios.defaults.baseURL = 'https://comercialapi-production.up.railway.app/';
 // axios.defaults.baseURL = 'http://192.168.1.15:3000/';
-
+ 
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodyParser.json({ limit: '50mb' }));
 // app.use((req, res, next) => {

@@ -1,5 +1,5 @@
 const express = require('express');
-const { client, user, calendary, cotizacion, register, probability } = require('../db/db');
+const { client, user, calendary, cotizacion, noteCotizacion, register, probability } = require('../db/db');
 const { Op } = require('sequelize');
 
 const bcrypt = require('bcrypt');
@@ -83,7 +83,7 @@ const getCotizacionById = async ( req, res) => {
                     [Op.or]: ['pendiente', 'desarrollo', 'aplazado']
                 },
             },
-            include:[{
+            include:[{model: noteCotizacion}, {
                 model: calendary
             }, {
                 model: client
@@ -180,7 +180,7 @@ const getAllCotizacions = async (req, res) => {
                         [Op.or]: ['pendiente', 'desarrollo', 'espera', 'perdido']
                     }
                 },
-                include:[{
+                include:[{model: noteCotizacion}, {
                     model: calendary
                 }, {
                     model: client
@@ -205,7 +205,7 @@ const getAllCotizacions = async (req, res) => {
                     },
                     userId: userId
                 },
-                include:[{
+                include:[{model: noteCotizacion}, {
                     model: calendary
                 }, {
                     model: client
@@ -465,16 +465,69 @@ const aplazarCotizacion = async(req, res) => {
 
 
 
+// Cambiar el campo "estado" de una cotización (Enviada, en seguimiento, cierre, perdida, sin respuesta)
+const changeEstadoCotizacion = async (req, res) => {
+    try {
+        const { cotizacionId, estado } = req.body;
+        if (!cotizacionId || !estado) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+
+        const updated = await cotizacion.update(
+            { estado },
+            { where: { id: cotizacionId } }
+        ).catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if (!updated) return res.status(502).json({ msg: 'No hemos logrado actualizar el estado.' });
+
+        res.status(200).json({ msg: 'Estado actualizado con éxito.' });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: 'Ha ocurrido un error en la principal.' });
+    }
+}
+
+// Agregar una nota a una cotización
+const addNoteCotizacion = async (req, res) => {
+    try {
+        const { cotizacionId, note, imagen, estado } = req.body;
+        if (!cotizacionId || !note) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+
+        const searchCoti = await cotizacion.findByPk(cotizacionId).catch(() => null);
+        if (!searchCoti) return res.status(404).json({ msg: 'No hemos encontrado esta cotización.' });
+
+        const newNote = await noteCotizacion.create({
+            note,
+            imagen: imagen || null,
+            estado: estado || 'guardado',
+            cotizacionId
+        }).catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if (!newNote) return res.status(502).json({ msg: 'No hemos logrado agregar la nota.' });
+
+        res.status(201).json(newNote);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: 'Ha ocurrido un error en la principal.' });
+    }
+}
+
 module.exports = {
     updateCotizacionToCRM,
     addCotizacionToCRM,
     changeStateCotizacion, 
-    addCotiDesarrollo, // Espacio para cotización en desarrollo.
+    addCotiDesarrollo,
     aplazarCotizacion,
     getAllCotizacions,
-    getCotizacionById, // Obtener cotización particular.
+    getCotizacionById,
     getThisMonthCotizacion,
-    getNotesByCotizacion, // Traer cotizaciones
-    giveProbability, // Dar calificación
-    findClientByNIT, // Encontrar cliente por NIT
+    getNotesByCotizacion,
+    giveProbability,
+    findClientByNIT,
+    changeEstadoCotizacion,
+    addNoteCotizacion,
 }

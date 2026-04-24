@@ -40,6 +40,9 @@ module.exports = sequelize => {
         },
         state: { // Activa, Aprobada, Perdida, Aplazada, desarrollando.
             type: DataTypes.STRING
-        } 
+        }, 
+        estado: { // Enviada, en seguimiento, cierre, perdida, sin respuesta.
+            type: DataTypes.STRING
+        }
     })
 }

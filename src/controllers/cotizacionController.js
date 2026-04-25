@@ -469,10 +469,11 @@ const aplazarCotizacion = async(req, res) => {
 const changeEstadoCotizacion = async (req, res) => {
     try {
         const { cotizacionId, estado } = req.body;
-        if (!cotizacionId || !estado) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
-
+        if (!cotizacionId) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+        // Caso contrario, avanzamos
+        let estadoCoti = !estado ? null : estado;
         const updated = await cotizacion.update(
-            { estado },
+            { estado: estadoCoti },
             { where: { id: cotizacionId } }
         ).catch(err => {
             console.log(err);

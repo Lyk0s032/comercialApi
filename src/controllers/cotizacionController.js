@@ -177,7 +177,7 @@ const getAllCotizacions = async (req, res) => {
             const searchCoti = await cotizacion.findAll({
                 where: {
                     state: {
-                        [Op.or]: ['pendiente', 'desarrollo', 'espera', 'perdido']
+                        [Op.or]: ['pendiente', 'desarrollo', 'espera', 'aplazado', 'perdido']
                     }
                 },
                 include:[{model: noteCotizacion}, {

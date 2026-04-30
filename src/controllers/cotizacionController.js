@@ -80,10 +80,13 @@ const getCotizacionById = async ( req, res) => {
             where: {
                 id: cotizacionId,
                 state: {
-                    [Op.or]: ['pendiente', 'desarrollo', 'aplazado']
+                    [Op.or]: ['pendiente', 'desarrollo', 'aplazado', 'aprobada']
                 },
             },
-            include:[{model: noteCotizacion}, {
+            include:[
+                {
+                    model: noteCotizacion,
+                }, {
                 model: calendary
             }, {
                 model: client

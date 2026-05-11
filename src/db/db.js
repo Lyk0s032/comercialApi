@@ -25,7 +25,8 @@ const modelNotes = require('./model/notes');
 const modelNotesCotizacion = require('./model/notesCotizacion');
 // Modelo de cotizacion
 const modelCotizacion = require('./model/cotizacion');
-
+// Modelo de doing
+const modelDoing = require('./model/doing');
 // Modelo de probabilidad
 const modelProbability = require('./model/probability');
 const entorno = true;
@@ -53,9 +54,10 @@ modelCalendary(sequelize);
 modelNotes(sequelize);
 modelNotesCotizacion(sequelize);
 modelCotizacion(sequelize)            // Cotizacion
+modelDoing(sequelize);
 modelProbability(sequelize);
 modelData(sequelize);
-const { dataProspect, user, noteCotizacion, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta } = sequelize.models;
+const { dataProspect, user, noteCotizacion, tag, fuente, prospecto, client, contact, call, visita, calendary, register, cotizacion, probability, meta, doing } = sequelize.models;
 
 
 // USUARIO Y METAS
@@ -303,7 +305,13 @@ user.hasMany(cotizacion, {
 });
 cotizacion.belongsTo(user)
 
- 
+user.hasMany(doing, {
+  foreignKey: 'userId',
+  onDelete: 'CASCADE'
+});
+doing.belongsTo(user)
+
+
 
 // CALENDARIO
 cotizacion.hasMany(register, {

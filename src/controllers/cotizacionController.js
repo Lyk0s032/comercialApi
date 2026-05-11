@@ -1,5 +1,5 @@
 const express = require('express');
-const { client, user, calendary, cotizacion, noteCotizacion, register, probability } = require('../db/db');
+const { client, user, calendary, cotizacion, noteCotizacion, register, probability, doing } = require('../db/db');
 const { Op } = require('sequelize');
 
 const bcrypt = require('bcrypt');
@@ -520,6 +520,109 @@ const addNoteCotizacion = async (req, res) => {
     }
 }
 
+const DOING_STATES = {
+    pendiente: 'pendiente',
+    cumplida: 'cumplida'
+};
+
+const normalizeDoingState = (value) => {
+    if (!value || typeof value !== 'string') return null;
+    const key = value.trim().toLowerCase();
+    if (key === 'pendiente') return DOING_STATES.pendiente;
+    if (key === 'cumplida') return DOING_STATES.cumplida;
+    return null;
+};
+
+const createDoing = async (req, res) => {
+    try {
+        const { name, description, userId, state } = req.body;
+        if (!userId || !name) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+
+        const searchUser = await user.findByPk(userId).catch(() => null);
+        if (!searchUser) return res.status(404).json({ msg: 'No hemos encontrado este usuario.' });
+
+        const normalizedState = normalizeDoingState(state) || DOING_STATES.pendiente;
+        const insert = {
+            name,
+            description: description ?? null,
+            userId,
+            state: normalizedState,
+            fechaCumplido: normalizedState === DOING_STATES.cumplida ? new Date() : null
+        };
+
+        const created = await doing.create(insert).catch((err) => {
+            console.log(err);
+            return null;
+        });
+        if (!created) return res.status(502).json({ msg: 'No hemos logrado crear esto.' });
+
+        res.status(201).json(created);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: 'Ha ocurrido un error en la principal.' });
+    }
+};
+
+const updateDoingState = async (req, res) => {
+    try {
+        const { doingId, state } = req.body;
+        if (!doingId || !state) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+
+        const normalizedState = normalizeDoingState(state);
+        if (!normalizedState) return res.status(400).json({ msg: 'El estado no es válido. Use pendiente o cumplida.' });
+
+        const row = await doing.findByPk(doingId).catch(() => null);
+        if (!row) return res.status(404).json({ msg: 'No hemos encontrado este doing.' });
+
+        const payload =
+            normalizedState === DOING_STATES.cumplida
+                ? { state: normalizedState, fechaCumplido: new Date() }
+                : { state: normalizedState, fechaCumplido: null };
+
+        try {
+            await row.update(payload);
+        } catch (e) {
+            console.log(e);
+            return res.status(502).json({ msg: 'No hemos logrado actualizar esto.' });
+        }
+
+        res.status(200).json(row);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: 'Ha ocurrido un error en la principal.' });
+    }
+};
+
+const getPendingDoingsByUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+
+        const searchUser = await user.findByPk(userId).catch(() => null);
+        if (!searchUser) return res.status(404).json({ msg: 'No hemos encontrado este usuario.' });
+
+        const list = await doing
+            .findAll({
+                where: {
+                    userId,
+                    state: { [Op.iLike]: DOING_STATES.pendiente }
+                },
+                order: [['createdAt', 'DESC']]
+            })
+            .catch((err) => {
+                console.log(err);
+                return null;
+            });
+
+        if (!list) return res.status(502).json({ msg: 'No hemos logrado obtener los datos.' });
+
+        res.status(200).json(list);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: 'Ha ocurrido un error en la principal.' });
+    }
+};
+
 module.exports = {
     updateCotizacionToCRM,
     addCotizacionToCRM,
@@ -534,4 +637,7 @@ module.exports = {
     findClientByNIT,
     changeEstadoCotizacion,
     addNoteCotizacion,
+    createDoing,
+    updateDoingState,
+    getPendingDoingsByUser,
 }

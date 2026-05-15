@@ -261,13 +261,13 @@ const findClientByNIT = async (req, res) => {
 const addCotizacionToCRM = async (req, res) => {
     try{
         // Recibimos todos los datos por body,
-        const { name, nit, nro, fecha, bruto, iva, descuento, neto, userId, clientId, state } = req.body;
+        const { name, nit, nro, fecha, bruto, iva, descuento, neto, userId, clientId, state, distribuidor } = req.body;
 
         // Validamos los datos necesarios.
         if(!name || !clientId) return res.status(200).json({msg: 'Parametros invalidos'});
         // Caso contrario, avanzamos...
         // name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId
-        const addCoti = await addCotizacion(name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, state)
+        const addCoti = await addCotizacion(name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, state, distribuidor)
         .then((res) => {
             console.log('Crea la cotizacion');
             return res

@@ -289,13 +289,13 @@ const addCotizacionToCRM = async (req, res) => {
 const updateCotizacionToCRM = async (req, res) => {
     try{
         // Recibimos todos los datos por body,
-        const { name, nit, nro, fecha, bruto, iva, descuento, neto, userId, clientId, cotizacionId, state } = req.body;
+        const { name, nit, nro, fecha, bruto, iva, descuento, neto, userId, clientId, cotizacionId, state, distribuidor } = req.body;
 
         // Validamos los datos necesarios.
         if(!clientId || !cotizacionId) return res.status(200).json({msg: 'Parametros invalidos'});
         // Caso contrario, avanzamos...
-        // name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId
-        const addCoti = await editCotizacion(name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, cotizacionId, state)
+        // name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, distribuidor
+        const addCoti = await editCotizacion(name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, cotizacionId, state, distribuidor)
         .then((res) => {
             if(res == 404){
                 return 404;
@@ -623,6 +623,34 @@ const getPendingDoingsByUser = async (req, res) => {
     }
 };
 
+// Actualizar campo distribuidor específicamente
+const updateDistribuidorCotizacion = async (req, res) => {
+    try {
+        const { cotizacionId, distribuidor } = req.body;
+        if (!cotizacionId) return res.status(400).json({ msg: 'Los parámetros no son válidos.' });
+        
+        // Validar que distribuidor sea un booleano
+        if (distribuidor !== true && distribuidor !== false) {
+            return res.status(400).json({ msg: 'El campo distribuidor debe ser verdadero o falso.' });
+        }
+
+        const updated = await cotizacion.update(
+            { distribuidor },
+            { where: { id: cotizacionId } }
+        ).catch(err => {
+            console.log(err);
+            return null;
+        });
+
+        if (!updated) return res.status(502).json({ msg: 'No hemos logrado actualizar el campo distribuidor.' });
+
+        res.status(200).json({ msg: 'Campo distribuidor actualizado con éxito.' });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: 'Ha ocurrido un error en la principal.' });
+    }
+};
+
 module.exports = {
     updateCotizacionToCRM,
     addCotizacionToCRM,
@@ -640,4 +668,5 @@ module.exports = {
     createDoing,
     updateDoingState,
     getPendingDoingsByUser,
+    updateDistribuidorCotizacion,
 }

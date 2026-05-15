@@ -2,7 +2,7 @@ const dayjs = require('dayjs');
 const { cliente, register, calendary, cotizacion } = require('./../../db/db');
 
 // Funcion para agregar Cotizacion.
-const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, state) => {
+const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, state, distribuidor) => {
     try{
         // Validamos los datos necesarios.
         const msg = "Parametros invalidos";
@@ -21,7 +21,8 @@ const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto,
             neto,
             clientId,
             userId,
-            state: state
+            state: state,
+            distribuidor: distribuidor ? distribuidor : false
         }).catch(err =>{
             console.log(err);
             return null;
@@ -38,7 +39,7 @@ const addCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto,
 }
 
 // Funcion para editar Cotizacion por ID.
-const editCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, cotizacionId, state) => {
+const editCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto, userId, clientId, cotizacionId, state, distribuidor) => {
     try{
 
         const coti = await cotizacion.findByPk(cotizacionId).catch(err => {
@@ -57,7 +58,8 @@ const editCotizacion = async (name, nit, nro, fecha, bruto, descuento, iva, neto
             descuento: descuento ? descuento : coti.descuento,
             iva: iva,
             neto: neto ? neto : coti.neto,
-            state
+            state,
+            distribuidor: distribuidor !== undefined ? distribuidor : coti.distribuidor
         }, {
             where: {
                 id: cotizacionId

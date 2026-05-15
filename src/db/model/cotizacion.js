@@ -43,6 +43,10 @@ module.exports = sequelize => {
         }, 
         estado: { // Enviada, en seguimiento, cierre, perdida, sin respuesta.
             type: DataTypes.STRING
+        },
+        distribuidor: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     })
 }
